@@ -111,4 +111,66 @@ public class JdbcSudokuBoardDaoTest {
             fail(e);
         }
     }
-}
+
+    @Test
+    public void testWriteNullNameThrowsNullPointerException() {
+        try (Dao<SudokuBoard> dao = new JdbcSudokuBoardDao(TEST_DB_URL)) {
+            assertThrows(NullPointerException.class,
+                    () -> dao.write(null, new SudokuBoard(new BacktrackingSudokuSolver())));
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    public void testConstructorNullUrlThrowsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> new JdbcSudokuBoardDao(null));
+    }
+
+    @Test
+    public void testConstructorEmptyUrlThrowsIllegalArgument() {
+        assertThrows(IllegalArgumentException.class, () -> new JdbcSudokuBoardDao(""));
+    }
+
+    @Test
+    public void testNamesEmptyDatabase() {
+        try (Dao<SudokuBoard> dao = new JdbcSudokuBoardDao(TEST_DB_URL)) {
+            var names = dao.names();
+            assertTrue(names.isEmpty());
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    public void testNamesCount() {
+        try (Dao<SudokuBoard> dao = new JdbcSudokuBoardDao(TEST_DB_URL)) {
+            dao.write("board1", new SudokuBoard(new BacktrackingSudokuSolver()));
+            dao.write("board2", new SudokuBoard(new BacktrackingSudokuSolver()));
+            dao.write("board3", new SudokuBoard(new BacktrackingSudokuSolver()));
+
+            assertEquals(3, dao.names().size());
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+
+    @Test
+    public void testWriteAndReadAllFields() {
+        try (Dao<SudokuBoard> dao = new JdbcSudokuBoardDao(TEST_DB_URL)) {
+            SudokuBoard board = new SudokuBoard(new BacktrackingSudokuSolver());
+            board.solveGame();
+            dao.write("fullBoard", board);
+
+            SudokuBoard readBoard = dao.read("fullBoard");
+
+            for (int row = 0; row < 9; row++) {
+                for (int col = 0; col < 9; col++) {
+                    assertEquals(board.getField(row, col).getValue(), readBoard.getField(row, col).getValue());
+                }
+            }
+        } catch (Exception e) {
+            fail(e);
+        }
+    }
+}
